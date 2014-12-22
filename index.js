@@ -111,10 +111,17 @@ function s3syncer(db, options) {
     off.on('fail', function() {
       next(lasterr || new Error('unknown error'))
     }).on('ready', function() {
+      var contentType = mime.lookup(absolute);
+      // cf. knox issue #83
+      // Add charset if it's known.
+      var charset = mime.charsets.lookup(contentType);
+      if (charset) {
+        contentType += '; charset=' + charset;
+      }
       var headers = xtend({
           'x-amz-acl': 'public-read'
         , 'x-amz-meta-syncfilehash': details.md5
-        , 'Content-Type': mime.lookup(absolute)
+        , 'Content-Type': contentType
       }, options.headers)
 
       client.putFile(absolute, relative, headers, function(err, res) {
